@@ -91,7 +91,15 @@ async function run() {
         containerName = tag;
 
         console.log(`Building Docker image: ${tag}...`);
-        cp.execSync(`docker build -t ${tag} .`, { cwd: buildDir, stdio: 'inherit' });
+        try {
+            cp.execSync(`docker build -t ${tag} .`, { cwd: buildDir, stdio: 'inherit' });
+        } catch (e: any) {
+            console.error('Docker build failed. Diagnostics: Listing files in build directory...');
+            try {
+                cp.execSync(`find . -maxdepth 3 -not -path '*/.*'`, { cwd: buildDir, stdio: 'inherit' });
+            } catch (findErr) { }
+            throw e;
+        }
 
         const isDocker = await fs.pathExists('/.dockerenv');
         let dockerNetArgs = '';
