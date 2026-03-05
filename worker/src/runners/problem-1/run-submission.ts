@@ -48,10 +48,14 @@ async function run() {
                 process.exit(2);
             }
             tempExtractDir = await fs.mkdtemp(path.join(os.tmpdir(), 'eval-'));
-            console.log(`Extracting ${submissionPath} to ${tempExtractDir}...`);
-            await fs.createReadStream(submissionPath)
-                .pipe(unzipper.Extract({ path: tempExtractDir }))
-                .promise();
+            console.log(`Extracting ${submissionPath} to ${tempExtractDir} using system unzip...`);
+            try {
+                // Using system unzip as it's more reliable with Mac-generated zips
+                cp.execSync(`unzip -o "${submissionPath}" -d "${tempExtractDir}"`, { stdio: 'inherit' });
+            } catch (unzipErr: any) {
+                console.error('Extraction failed with system unzip, falling back to diagnostics...');
+                throw unzipErr;
+            }
             extractRoot = tempExtractDir;
         } else {
             extractRoot = submissionPath;
@@ -125,15 +129,19 @@ async function run() {
             const buildFlags = dockerfilePath !== 'Dockerfile' ? `-f "${dockerfilePath}"` : '';
             cp.execSync(`docker build -t ${tag} ${buildFlags} .`, { cwd: buildDir, stdio: 'inherit' });
         } catch (e: any) {
-            console.error('Docker build failed. Diagnostics: Listing files in extract root AND build context...');
+            console.error('Docker build failed. Diagnostics: Detailed file search...');
             try {
-                console.log('--- Files in extractRoot ---');
-                cp.execSync(`find . -maxdepth 3 -not -path '*/.*'`, { cwd: extractRoot, stdio: 'inherit' });
-                if (buildDir !== extractRoot) {
-                    console.log('--- Files in buildDir ---');
-                    cp.execSync(`find . -maxdepth 3 -not -path '*/.*'`, { cwd: buildDir, stdio: 'inherit' });
+                console.log('--- Searching for tsconfig.json everywhere in extraction root ---');
+                cp.execSync(`find "${extractRoot}" -name "tsconfig.json"`, { stdio: 'inherit' });
+
+                console.log('--- Listing all files (including hidden) in build context ---');
+                cp.execSync(`ls -la`, { cwd: buildDir, stdio: 'inherit' });
+
+                console.log('--- Files in src directory ---');
+                if (await fs.pathExists(path.join(buildDir, 'src'))) {
+                    cp.execSync(`find src -maxdepth 2`, { cwd: buildDir, stdio: 'inherit' });
                 }
-            } catch (findErr) { }
+            } catch (diagErr) { }
             throw e;
         }
 
