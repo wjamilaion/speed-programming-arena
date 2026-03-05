@@ -168,7 +168,7 @@ async function run() {
             let hostPort = '';
             for (let p = 5000; p <= 5019; p++) {
                 try {
-                    cp.execSync(`docker run -d -p ${p}:8080 --name ${containerName} ${tag}`, { stdio: 'pipe' });
+                    cp.execSync(`docker run -d -p ${p}:80 --name ${containerName} ${tag}`, { stdio: 'pipe' });
                     hostPort = p.toString();
                     break;
                 } catch (e: any) {
