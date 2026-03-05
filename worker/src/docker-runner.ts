@@ -42,18 +42,21 @@ export async function evaluateSubmission(params: EvaluateParams): Promise<Evalua
         console.log(`[DEBUG] __dirname: ${__dirname}`);
 
         if (runnerId) {
-            const runnerScript = path.join(CUSTOM_RUNNERS_BASE_DIR, runnerId, 'run-submission.sh');
-            console.log(`[DEBUG] Checking for runner script at: ${runnerScript}`);
+            const runnerTs = path.join(CUSTOM_RUNNERS_BASE_DIR, runnerId, 'run-submission.ts');
+            const runnerSh = path.join(CUSTOM_RUNNERS_BASE_DIR, runnerId, 'run-submission.sh');
 
-            if (await fs.pathExists(runnerScript)) {
-                console.log(`✅ [DEBUG] Found custom runner: ${runnerScript}`);
-                // Ensure script is executable
-                await fs.chmod(runnerScript, '755');
+            let cmd = '';
+            if (await fs.pathExists(runnerTs)) {
+                console.log(`✅ [DEBUG] Found custom TS runner: ${runnerTs}`);
+                cmd = `tsx "${runnerTs}" "${params.zipPath}"`;
+            } else if (await fs.pathExists(runnerSh)) {
+                console.log(`✅ [DEBUG] Found custom SH runner: ${runnerSh}`);
+                await fs.chmod(runnerSh, '755');
+                cmd = `${runnerSh} "${params.zipPath}"`;
+            }
 
-                const cmd = `${runnerScript} "${params.zipPath}"`;
-                const { stdout, stderr, code } = await runWithTimeout(cmd, TIMEOUT_MS);
-
-                // For custom runners, exit code 0 is Success
+            if (cmd) {
+                const { code } = await runWithTimeout(cmd, TIMEOUT_MS);
                 const isAccepted = code === 0;
 
                 const score = calculateScore(isAccepted ? 1 : 0, 1, params.timeTakenSeconds, params.attemptNumber);
@@ -64,7 +67,7 @@ export async function evaluateSubmission(params: EvaluateParams): Promise<Evalua
                     totalCount: 1
                 };
             } else {
-                console.warn(`❌ [DEBUG] Runner script NOT found at: ${runnerScript}`);
+                console.warn(`❌ [DEBUG] No runner found for ID: ${runnerId}`);
             }
         }
 
@@ -111,18 +114,31 @@ export async function evaluateSubmission(params: EvaluateParams): Promise<Evalua
 
 async function runWithTimeout(cmd: string, timeout: number): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise((resolve, reject) => {
-        const child = cp.exec(cmd, (error, stdout, stderr) => {
-            resolve({
-                stdout,
-                stderr,
-                code: error ? (error as any).code : 0
-            });
+        const child = cp.spawn(cmd, { shell: true });
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data) => {
+            const str = data.toString();
+            stdout += str;
+            process.stdout.write(str);
         });
+
+        child.stderr.on('data', (data) => {
+            const str = data.toString();
+            stderr += str;
+            process.stderr.write(str);
+        });
+
         const timer = setTimeout(() => {
             child.kill();
             reject(new Error('Evaluation timed out'));
         }, timeout);
-        child.on('exit', () => clearTimeout(timer));
+
+        child.on('exit', (code) => {
+            clearTimeout(timer);
+            resolve({ stdout, stderr, code });
+        });
     });
 }
 

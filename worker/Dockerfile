@@ -1,7 +1,8 @@
 FROM node:20-alpine
 
 # Install tools for custom runners and Docker communication
-RUN apk add --no-cache docker-cli bash curl unzip
+RUN apk add --no-cache docker-cli bash curl unzip && \
+    npm install -g tsx
 
 WORKDIR /app
 
