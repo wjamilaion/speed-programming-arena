@@ -1,0 +1,27 @@
+{
+    "name": "bugfix-arena-worker",
+    "version": "1.0.0",
+    "description": "Speed Bug-Fix Arena — Submission Evaluation Worker",
+    "main": "dist/index.js",
+    "scripts": {
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "dev": "ts-node-dev --respawn src/index.ts"
+    },
+    "dependencies": {
+        "bullmq": "^5.1.0",
+        "ioredis": "5.9.3",
+        "pg": "^8.11.3",
+        "unzipper": "^0.10.14",
+        "fs-extra": "^11.2.0",
+        "dotenv": "^16.3.1"
+    },
+    "devDependencies": {
+        "@types/node": "^20.11.5",
+        "@types/pg": "^8.10.9",
+        "@types/unzipper": "^0.10.9",
+        "@types/fs-extra": "^11.0.4",
+        "typescript": "^5.3.3",
+        "ts-node-dev": "^2.0.0"
+    }
+}

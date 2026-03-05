@@ -1,0 +1,13 @@
+{
+  "name": "ssr-check-runner",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "check-ssr-html": "ts-node --project scripts/tsconfig.json scripts/check-ssr-html.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5"
+  }
+}
