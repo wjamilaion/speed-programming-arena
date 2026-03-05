@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://34.172.142.110:3000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://34.172.142.110:3001";
 
 function getHeaders(): Record<string, string> {
     if (typeof window === "undefined") return {};
