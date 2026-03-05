@@ -156,7 +156,7 @@ async function run() {
                 if (networkName) {
                     console.log(`Detected Docker environment, using network: ${networkName}`);
                     dockerNetArgs = `--network ${networkName}`;
-                    baseUrl = `http://${containerName}:8080`;
+                    baseUrl = `http://${containerName}:80`;
                 }
             } catch (e) {
                 console.warn('Failed to detect Docker network, falling back to localhost mapping');
