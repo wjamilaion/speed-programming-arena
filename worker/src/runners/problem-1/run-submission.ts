@@ -57,26 +57,56 @@ async function run() {
             extractRoot = submissionPath;
         }
 
-        // Find BUILD_DIR
-        let buildDir = '';
-        const searchDirs = [
-            extractRoot,
-            path.join(extractRoot, 'next-version')
-        ];
-
-        // Also check one level deep
-        const subdirs = await fs.readdir(extractRoot);
-        for (const subdir of subdirs) {
-            const fullPath = path.join(extractRoot, subdir);
-            if ((await fs.stat(fullPath)).isDirectory()) {
-                searchDirs.push(fullPath);
+        // 1. Unwrap logic: if extractRoot contains only one directory, move into it
+        let currentRoot = extractRoot;
+        while (true) {
+            const files = await fs.readdir(currentRoot);
+            const filteredFiles = files.filter(f => f !== '__MACOSX' && !f.startsWith('.'));
+            if (filteredFiles.length === 1) {
+                const fullPath = path.join(currentRoot, filteredFiles[0]);
+                if ((await fs.stat(fullPath)).isDirectory()) {
+                    currentRoot = fullPath;
+                    console.log(`Unwrapping ZIP: moving into ${currentRoot}`);
+                    continue;
+                }
             }
+            break;
         }
+        extractRoot = currentRoot;
 
-        for (const dir of searchDirs) {
-            if (await fs.pathExists(path.join(dir, 'Dockerfile')) && await fs.pathExists(path.join(dir, 'package.json'))) {
-                buildDir = dir;
-                break;
+        // 2. Find the best directory to run build from
+        let buildDir = '';
+        let dockerfilePath = '';
+
+        const findBuildInfo = async (dir: string): Promise<string | null> => {
+            const files = await fs.readdir(dir);
+            if (files.includes('Dockerfile') && files.includes('package.json')) {
+                return dir;
+            }
+            // Check subdirectories
+            for (const file of files) {
+                const fullPath = path.join(dir, file);
+                const stat = await fs.stat(fullPath);
+                if (stat.isDirectory() && file !== 'node_modules' && !file.startsWith('.')) {
+                    const found: string | null = await findBuildInfo(fullPath);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        const foundDir = await findBuildInfo(extractRoot);
+
+        if (foundDir) {
+            // If tsconfig.json exists at a higher level than the one with Dockerfile/package.json,
+            // we should probably use that higher level as the context.
+            if (await fs.pathExists(path.join(extractRoot, 'tsconfig.json')) && extractRoot !== foundDir) {
+                console.log(`Found tsconfig.json at root ${extractRoot}, but Dockerfile/package.json at ${foundDir}. Using root as context.`);
+                buildDir = extractRoot;
+                dockerfilePath = path.relative(extractRoot, path.join(foundDir, 'Dockerfile'));
+            } else {
+                buildDir = foundDir;
+                dockerfilePath = 'Dockerfile';
             }
         }
 
@@ -85,18 +115,24 @@ async function run() {
             process.exit(2);
         }
 
-        console.log(`Found build directory: ${buildDir}`);
+        console.log(`Found build context: ${buildDir} (Dockerfile: ${dockerfilePath})`);
 
         const tag = `submission-${Date.now()}`;
         containerName = tag;
 
         console.log(`Building Docker image: ${tag}...`);
         try {
-            cp.execSync(`docker build -t ${tag} .`, { cwd: buildDir, stdio: 'inherit' });
+            const buildFlags = dockerfilePath !== 'Dockerfile' ? `-f "${dockerfilePath}"` : '';
+            cp.execSync(`docker build -t ${tag} ${buildFlags} .`, { cwd: buildDir, stdio: 'inherit' });
         } catch (e: any) {
-            console.error('Docker build failed. Diagnostics: Listing files in build directory...');
+            console.error('Docker build failed. Diagnostics: Listing files in extract root AND build context...');
             try {
-                cp.execSync(`find . -maxdepth 3 -not -path '*/.*'`, { cwd: buildDir, stdio: 'inherit' });
+                console.log('--- Files in extractRoot ---');
+                cp.execSync(`find . -maxdepth 3 -not -path '*/.*'`, { cwd: extractRoot, stdio: 'inherit' });
+                if (buildDir !== extractRoot) {
+                    console.log('--- Files in buildDir ---');
+                    cp.execSync(`find . -maxdepth 3 -not -path '*/.*'`, { cwd: buildDir, stdio: 'inherit' });
+                }
             } catch (findErr) { }
             throw e;
         }
