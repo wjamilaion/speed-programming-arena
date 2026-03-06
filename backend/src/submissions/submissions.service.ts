@@ -125,6 +125,14 @@ export class SubmissionsService {
         });
     }
 
+    async findAllByEvent(eventId: string) {
+        return this.submissionRepo.find({
+            where: { event_id: eventId },
+            relations: ['user', 'challenge'],
+            order: { created_at: 'DESC' },
+        });
+    }
+
     async recalculateScores() {
         // Fetch all accepted submissions with event_id
         const submissions = await this.submissionRepo.find({

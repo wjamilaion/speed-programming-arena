@@ -10,6 +10,7 @@ import {
     HttpCode,
     Get,
     Query,
+    Param,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -88,5 +89,10 @@ export class SubmissionsController {
         @Query('challengeId') challengeId?: string,
     ) {
         return this.submissionsService.findRecent(eventId, challengeId);
+    }
+
+    @Get('event/:eventId')
+    async findAllByEvent(@Param('eventId') eventId: string) {
+        return this.submissionsService.findAllByEvent(eventId);
     }
 }

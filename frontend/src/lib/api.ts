@@ -126,3 +126,11 @@ export async function fetchRecentSubmissions(eventId?: string, challengeId?: str
     if (!res.ok) throw new Error("Failed to fetch recent submissions");
     return res.json();
 }
+
+export async function fetchEventSubmissions(eventId: string) {
+    const res = await fetch(`${API_URL}/submissions/event/${eventId}`, {
+        headers: getHeaders()
+    });
+    if (!res.ok) throw new Error("Failed to fetch event submissions history");
+    return res.json();
+}

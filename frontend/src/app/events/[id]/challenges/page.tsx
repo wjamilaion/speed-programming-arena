@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, Clock, ArrowRight, ArrowLeft, Layout, Medal, Zap, User, ChevronRight } from "lucide-react";
+import { Trophy, Clock, ArrowRight, ArrowLeft, Layout, Medal, Zap, User, ChevronRight, History } from "lucide-react";
 import { fetchEvent, fetchEventLeaderboard, fetchPersonalStanding } from "@/lib/api";
 import SubmissionsFeed from "@/components/SubmissionsFeed";
+import Link from "next/link";
 
 export default function EventChallenges({ params }: { params: { id: string } }) {
     const eventId = params.id;
@@ -65,7 +66,13 @@ export default function EventChallenges({ params }: { params: { id: string } }) 
                             <Layout className="w-4 h-4" /> Challenge Hub
                         </div>
                         <h1 className="text-6xl font-black italic tracking-tighter uppercase leading-none">{event.name}</h1>
-                        <p className="text-slate-500 text-xl font-light italic max-w-2xl">{event.description}</p>
+                        <div className="flex flex-wrap items-center gap-4 text-xs font-black uppercase tracking-widest text-slate-500">
+                            {event.organized_by && (
+                                <div className="text-blue-500">By {event.organized_by}</div>
+                            )}
+                            {event.organized_by && <span className="text-slate-800">•</span>}
+                            <div>{event.description}</div>
+                        </div>
                     </div>
 
                     <div className="bg-slate-900/50 px-6 py-4 rounded-3xl border border-slate-800 backdrop-blur-xl shrink-0">
@@ -155,12 +162,20 @@ export default function EventChallenges({ params }: { params: { id: string } }) 
                         </div>
 
                         {leaderboard.length > 0 && (
-                            <button
-                                onClick={() => router.push(`/leaderboard/event/${eventId}`)}
-                                className="w-full py-4 bg-slate-900/50 border border-slate-800 rounded-3xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-400 hover:border-blue-500/30 transition-all flex items-center justify-center gap-2 group"
-                            >
-                                View Full Leaderboard <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <Link
+                                    href={`/events/${eventId}/submissions`}
+                                    className="flex-1 py-4 bg-slate-900 border border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:border-slate-700 transition-all flex items-center justify-center gap-2 group"
+                                >
+                                    <History className="w-4 h-4 group-hover:rotate-[-20deg] transition-transform" /> History
+                                </Link>
+                                <button
+                                    onClick={() => router.push(`/leaderboard/event/${eventId}`)}
+                                    className="flex-[2] py-4 bg-blue-500 border border-blue-600 rounded-3xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-blue-600 transition-all flex items-center justify-center gap-2 shadow-xl shadow-blue-500/20 active:scale-95"
+                                >
+                                    <Trophy className="w-4 h-4" /> Leaderboard
+                                </button>
+                            </div>
                         )}
 
                         {personalStanding && (

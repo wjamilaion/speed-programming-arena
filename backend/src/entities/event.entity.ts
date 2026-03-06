@@ -13,6 +13,9 @@ export class Event {
     @Column('text', { nullable: true })
     description: string;
 
+    @Column({ length: 255, nullable: true })
+    organized_by: string;
+
     @Column({ type: 'timestamptz' })
     start_time: Date;
 

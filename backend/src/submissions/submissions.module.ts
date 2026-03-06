@@ -8,14 +8,17 @@ import { Submission } from '../entities/submission.entity';
 import { AuthModule } from '../auth/auth.module';
 import { WsModule } from '../ws/ws.module';
 import { UsersModule } from '../users/users.module';
+import { EventsModule } from '../events/events.module';
+import { forwardRef } from '@nestjs/common';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Submission]),
         BullModule.registerQueue({ name: 'evaluation' }),
-        AuthModule,
+        forwardRef(() => AuthModule),
         WsModule,
         UsersModule,
+        EventsModule,
     ],
     controllers: [SubmissionsController],
     providers: [SubmissionsService, SubmissionsEvents],
