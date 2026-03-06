@@ -70,10 +70,10 @@ export default function EventsExplorer() {
                                     key={event.id}
                                     onClick={() => status !== "upcoming" && router.push(`/events/${event.id}/challenges`)}
                                     className={`group relative p-8 bg-slate-900/40 border rounded-3xl transition-all overflow-hidden ${status === "live"
-                                            ? "border-blue-500/50 hover:bg-slate-900/60 cursor-pointer shadow-2xl shadow-blue-500/5"
-                                            : status === "upcoming"
-                                                ? "border-slate-800 opacity-60 cursor-not-allowed"
-                                                : "border-slate-800 hover:bg-slate-900/60 cursor-pointer"
+                                        ? "border-blue-500/50 hover:bg-slate-900/60 cursor-pointer shadow-2xl shadow-blue-500/5"
+                                        : status === "upcoming"
+                                            ? "border-slate-800 opacity-60 cursor-not-allowed"
+                                            : "border-slate-800 hover:bg-slate-900/60 cursor-pointer"
                                         }`}
                                 >
                                     {status === "live" && (
@@ -108,8 +108,25 @@ export default function EventsExplorer() {
                                         </div>
 
                                         {status !== "upcoming" && (
-                                            <div className="flex items-center gap-3 text-blue-500 font-bold group-hover:translate-x-2 transition-transform">
-                                                Enter Arena <ChevronRight className="w-5 h-5" />
+                                            <div className="flex flex-col items-end gap-3">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(`/events/${event.id}/challenges`);
+                                                    }}
+                                                    className="flex items-center gap-3 text-blue-500 font-bold group-hover:translate-x-2 transition-transform"
+                                                >
+                                                    Enter Arena <ChevronRight className="w-5 h-5" />
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(`/leaderboard/event/${event.id}`);
+                                                    }}
+                                                    className="flex items-center gap-3 text-slate-500 hover:text-blue-400 text-xs font-black uppercase tracking-widest transition-colors"
+                                                >
+                                                    <Trophy className="w-4 h-4" /> Leaderboard
+                                                </button>
                                             </div>
                                         )}
                                     </div>

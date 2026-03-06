@@ -10,8 +10,24 @@ export class LeaderboardController {
         return this.leaderboardService.getTop10(challengeId);
     }
 
+    @Get(':challengeId/user/:userId')
+    async getPersonalChallengeStanding(
+        @Param('challengeId') challengeId: string,
+        @Param('userId') userId: string,
+    ) {
+        return this.leaderboardService.getUserChallengeStanding(challengeId, userId);
+    }
+
     @Get('event/:eventId')
     async getEventTop10(@Param('eventId') eventId: string) {
         return this.leaderboardService.getEventTop10(eventId);
+    }
+
+    @Get('event/:eventId/user/:userId')
+    async getPersonalStanding(
+        @Param('eventId') eventId: string,
+        @Param('userId') userId: string,
+    ) {
+        return this.leaderboardService.getUserEventStanding(eventId, userId);
     }
 }

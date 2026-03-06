@@ -99,3 +99,19 @@ export async function fetchSubmissions(challengeId?: string) {
     if (!res.ok) throw new Error("Failed to fetch submissions");
     return res.json();
 }
+
+export async function fetchPersonalStanding(eventId: string, userId: string) {
+    const res = await fetch(`${API_URL}/leaderboard/event/${eventId}/user/${userId}`, {
+        headers: getHeaders()
+    });
+    if (!res.ok) throw new Error("Failed to fetch personal standing");
+    return res.json();
+}
+
+export async function fetchPersonalChallengeStanding(challengeId: string, userId: string) {
+    const res = await fetch(`${API_URL}/leaderboard/${challengeId}/user/${userId}`, {
+        headers: getHeaders()
+    });
+    if (!res.ok) throw new Error("Failed to fetch personal challenge standing");
+    return res.json();
+}

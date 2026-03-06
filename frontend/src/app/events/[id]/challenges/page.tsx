@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, Clock, ArrowRight, ArrowLeft, Layout, Medal, Zap } from "lucide-react";
-import { fetchEvent, fetchEventLeaderboard } from "@/lib/api";
+import { Trophy, Clock, ArrowRight, ArrowLeft, Layout, Medal, Zap, User, ChevronRight } from "lucide-react";
+import { fetchEvent, fetchEventLeaderboard, fetchPersonalStanding } from "@/lib/api";
 
 export default function EventChallenges({ params }: { params: { id: string } }) {
     const eventId = params.id;
     const [event, setEvent] = useState<any>(null);
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    const [personalStanding, setPersonalStanding] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
@@ -20,6 +21,17 @@ export default function EventChallenges({ params }: { params: { id: string } }) 
             ]);
             setEvent(eventData);
             setLeaderboard(lbData);
+
+            // Fetch personal standing if identity exists
+            const identityStr = localStorage.getItem("bugfix_identity");
+            if (identityStr) {
+                const identity = JSON.parse(identityStr);
+                const handle = identity.handle;
+                if (handle) {
+                    const standing = await fetchPersonalStanding(eventId, handle);
+                    setPersonalStanding(standing);
+                }
+            }
         } catch (err) {
             console.error(err);
         } finally {
@@ -140,6 +152,42 @@ export default function EventChallenges({ params }: { params: { id: string } }) 
                                 </div>
                             )}
                         </div>
+
+                        {leaderboard.length > 0 && (
+                            <button
+                                onClick={() => router.push(`/leaderboard/event/${eventId}`)}
+                                className="w-full py-4 bg-slate-900/50 border border-slate-800 rounded-3xl text-xs font-black uppercase tracking-widest text-slate-500 hover:text-blue-400 hover:border-blue-500/30 transition-all flex items-center justify-center gap-2 group"
+                            >
+                                View Full Leaderboard <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        )}
+
+                        {personalStanding && (
+                            <div className="space-y-4">
+                                <h2 className="text-xl font-black italic uppercase tracking-widest flex items-center gap-2 text-emerald-500">
+                                    <User className="w-5 h-5" /> Your Standing
+                                </h2>
+                                <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-emerald-500 text-emerald-950 rounded-full flex items-center justify-center font-black italic text-xl shadow-lg shadow-emerald-500/20">
+                                            #{personalStanding.rank}
+                                        </div>
+                                        <div>
+                                            <div className="font-bold tracking-tight uppercase text-emerald-100">You</div>
+                                            <div className="text-xs font-mono text-emerald-500/70">@{personalStanding.dev_id}</div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="text-emerald-400 font-black italic text-xl flex items-center gap-1.5 justify-end">
+                                            <Medal className="w-4 h-4" /> {personalStanding.total_score}
+                                        </div>
+                                        <div className="text-xs text-emerald-500/50 font-light flex items-center gap-1 justify-end">
+                                            <Zap className="w-3.5 h-3.5" /> {personalStanding.total_time}s
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-3xl">
                             <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-2">Scoring Rules</p>

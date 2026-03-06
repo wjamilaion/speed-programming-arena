@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Trophy, Medal, Crown, Loader2, Users, ArrowLeft } from "lucide-react";
-import { fetchLeaderboard, fetchChallenge } from "@/lib/api";
+import { Trophy, Medal, Crown, Loader2, Users, ArrowLeft, User, Zap } from "lucide-react";
+import { fetchLeaderboard, fetchChallenge, fetchPersonalChallengeStanding } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
 
 export default function LeaderboardPage() {
@@ -11,6 +11,7 @@ export default function LeaderboardPage() {
     const router = useRouter();
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [challenge, setChallenge] = useState<any>(null);
+    const [personalStanding, setPersonalStanding] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -22,6 +23,17 @@ export default function LeaderboardPage() {
                 ]);
                 setLeaderboard(lbData);
                 setChallenge(chData);
+
+                // Fetch personal standing if identity exists
+                const identityStr = localStorage.getItem("bugfix_identity");
+                if (identityStr) {
+                    const identity = JSON.parse(identityStr);
+                    const handle = identity.handle;
+                    if (handle) {
+                        const standing = await fetchPersonalChallengeStanding(challengeId, handle);
+                        setPersonalStanding(standing);
+                    }
+                }
             } catch (err) {
                 console.error(err);
             } finally {
@@ -141,6 +153,36 @@ export default function LeaderboardPage() {
                     </table>
                 </div>
             </div>
+
+            {personalStanding && (
+                <div className="bg-emerald-500/10 rounded-[2.5rem] border border-emerald-500/20 p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-emerald-500 text-emerald-950 rounded-full flex items-center justify-center font-black italic text-2xl shadow-xl shadow-emerald-500/20">
+                            #{personalStanding.rank}
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="text-xl font-bold text-emerald-100 flex items-center gap-2">
+                                <User className="w-5 h-5" /> Your Standing
+                            </h3>
+                            <p className="text-emerald-500/70 font-mono text-sm">@{personalStanding.dev_id}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-12">
+                        <div className="text-center md:text-right">
+                            <div className="text-emerald-400 font-black italic text-2xl flex items-center gap-2 justify-center md:justify-end">
+                                <Medal className="w-5 h-5" /> {personalStanding.score}
+                            </div>
+                            <p className="text-[10px] text-emerald-500/50 uppercase font-black tracking-widest mt-1">Total Score</p>
+                        </div>
+                        <div className="text-center md:text-right">
+                            <div className="text-slate-300 font-mono text-2xl flex items-center gap-2 justify-center md:justify-end">
+                                <Zap className="w-5 h-5 text-emerald-500" /> {personalStanding.time_taken_seconds}s
+                            </div>
+                            <p className="text-[10px] text-emerald-500/50 uppercase font-black tracking-widest mt-1">Best Time</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="text-center">
                 <p className="text-slate-500 text-sm">

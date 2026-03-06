@@ -12,6 +12,9 @@ import { User } from './entities/user.entity';
 import { Challenge } from './entities/challenge.entity';
 import { Submission } from './entities/submission.entity';
 import { Event } from './entities/event.entity';
+import { BullBoardModule } from '@bull-board/nestjs';
+import { ExpressAdapter } from '@bull-board/express';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 
 @Module({
     imports: [
@@ -30,6 +33,14 @@ import { Event } from './entities/event.entity';
                 host: process.env.REDIS_HOST || 'localhost',
                 port: parseInt(process.env.REDIS_PORT || '6379'),
             },
+        }),
+        BullBoardModule.forRoot({
+            route: '/admin/queues',
+            adapter: ExpressAdapter,
+        }),
+        BullBoardModule.forFeature({
+            name: 'evaluation',
+            adapter: BullMQAdapter,
         }),
         AuthModule,
         ChallengesModule,
