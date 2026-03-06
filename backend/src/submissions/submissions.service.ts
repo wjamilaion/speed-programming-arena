@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { Submission } from '../entities/submission.entity';
+import { EventsService } from '../events/events.service';
 
 interface CreateSubmissionDto {
     userId: string;
@@ -20,6 +21,7 @@ export class SubmissionsService {
         private readonly submissionRepo: Repository<Submission>,
         @InjectQueue('evaluation')
         private readonly evaluationQueue: Queue,
+        private readonly eventsService: EventsService,
     ) { }
 
     async create(dto: CreateSubmissionDto) {
@@ -60,6 +62,17 @@ export class SubmissionsService {
 
         const saved = await this.submissionRepo.save(submission);
 
+        // Fetch event start time if eventId exists
+        let eventStartTime: string | undefined;
+        if (dto.eventId) {
+            try {
+                const event = await this.eventsService.findOne(dto.eventId);
+                eventStartTime = event.start_time;
+            } catch (e) {
+                console.error('Failed to fetch event start time', e);
+            }
+        }
+
         // Push to evaluation queue
         await this.evaluationQueue.add('evaluate-submission', {
             submissionId: saved.id,
@@ -68,6 +81,7 @@ export class SubmissionsService {
             zipPath: dto.zipPath,
             timeTakenSeconds,
             attemptNumber,
+            eventStartTime,
         });
 
         return { submissionId: saved.id, status: 'queued' };
@@ -109,5 +123,33 @@ export class SubmissionsService {
             order: { created_at: 'DESC' },
             take: 20,
         });
+    }
+
+    async recalculateScores() {
+        // Fetch all accepted submissions with event_id
+        const submissions = await this.submissionRepo.find({
+            where: { status: 'accepted' },
+            relations: ['event'],
+        });
+
+        let updatedCount = 0;
+        for (const sub of submissions) {
+            if (!sub.event || !sub.event.start_time) continue;
+
+            const baseScore = 1000; // Assuming all passed for 'accepted'
+            const start = new Date(sub.event.start_time).getTime();
+            const created = new Date(sub.created_at).getTime();
+            const timeReference = Math.max(0, Math.floor((created - start) / 1000));
+
+            const timeBonus = Math.max(0, 3600 - timeReference);
+            const penalty = (sub.attempt_number - 1) * 20;
+            const newScore = Math.max(0, Math.round(baseScore + timeBonus - penalty));
+
+            if (sub.score !== newScore) {
+                await this.submissionRepo.update(sub.id, { score: newScore });
+                updatedCount++;
+            }
+        }
+        return { updatedCount, totalChecked: submissions.length };
     }
 }

@@ -18,15 +18,15 @@ export class LeaderboardService {
         u.name,
         u.dev_id,
         s.score,
-        s.time_taken_seconds,
+        s.created_at,
         s.status,
-        RANK() OVER (ORDER BY s.score DESC, s.time_taken_seconds ASC, s.attempt_number ASC) as rank
+        RANK() OVER (ORDER BY s.score DESC, s.created_at ASC, s.attempt_number ASC) as rank
       FROM (
         SELECT DISTINCT ON (user_id) 
-          user_id, score, time_taken_seconds, attempt_number, status
+          user_id, score, created_at, attempt_number, status
         FROM submissions
         WHERE challenge_id = $1 AND status = 'accepted'
-        ORDER BY user_id, score DESC, time_taken_seconds ASC, attempt_number ASC
+        ORDER BY user_id, score DESC, created_at ASC, attempt_number ASC
       ) s
       JOIN users u ON s.user_id = u.id
       ORDER BY rank
@@ -43,15 +43,15 @@ export class LeaderboardService {
         u.name,
         u.dev_id,
         s.score,
-        s.time_taken_seconds,
+        s.created_at,
         s.status,
-        RANK() OVER (ORDER BY s.score DESC, s.time_taken_seconds ASC, s.attempt_number ASC) as rank
+        RANK() OVER (ORDER BY s.score DESC, s.created_at ASC, s.attempt_number ASC) as rank
       FROM (
         SELECT DISTINCT ON (user_id) 
-          user_id, score, time_taken_seconds, attempt_number, status
+          user_id, score, created_at, attempt_number, status
         FROM submissions
         WHERE challenge_id = $1 AND status = 'accepted'
-        ORDER BY user_id, score DESC, time_taken_seconds ASC, attempt_number ASC
+        ORDER BY user_id, score DESC, created_at ASC, attempt_number ASC
       ) s
       JOIN users u ON s.user_id = u.id
     `;
@@ -65,17 +65,17 @@ export class LeaderboardService {
     const query = `
       WITH challenge_best AS (
         SELECT DISTINCT ON (user_id, challenge_id)
-          user_id, score, time_taken_seconds
+          user_id, score, created_at
         FROM submissions
         WHERE event_id = $1 AND status = 'accepted'
-        ORDER BY user_id, challenge_id, score DESC, time_taken_seconds ASC
+        ORDER BY user_id, challenge_id, score DESC, created_at ASC
       )
       SELECT 
         u.name,
         u.dev_id,
         SUM(cb.score) as total_score,
-        SUM(cb.time_taken_seconds) as total_time,
-        RANK() OVER (ORDER BY SUM(cb.score) DESC, SUM(cb.time_taken_seconds) ASC) as rank
+        MIN(cb.created_at) as first_solve_time,
+        RANK() OVER (ORDER BY SUM(cb.score) DESC, MIN(cb.created_at) ASC) as rank
       FROM challenge_best cb
       JOIN users u ON cb.user_id = u.id
       GROUP BY u.id, u.name, u.dev_id
@@ -90,10 +90,10 @@ export class LeaderboardService {
     const query = `
       WITH challenge_best AS (
         SELECT DISTINCT ON (user_id, challenge_id)
-          user_id, score, time_taken_seconds
+          user_id, score, created_at
         FROM submissions
         WHERE event_id = $1 AND status = 'accepted'
-        ORDER BY user_id, challenge_id, score DESC, time_taken_seconds ASC
+        ORDER BY user_id, challenge_id, score DESC, created_at ASC
       ),
       event_ranks AS (
         SELECT 
@@ -101,8 +101,8 @@ export class LeaderboardService {
           u.name,
           u.dev_id,
           SUM(cb.score) as total_score,
-          SUM(cb.time_taken_seconds) as total_time,
-          RANK() OVER (ORDER BY SUM(cb.score) DESC, SUM(cb.time_taken_seconds) ASC) as rank
+          MIN(cb.created_at) as first_solve_time,
+          RANK() OVER (ORDER BY SUM(cb.score) DESC, MIN(cb.created_at) ASC) as rank
         FROM challenge_best cb
         JOIN users u ON cb.user_id = u.id
         GROUP BY u.id, u.name, u.dev_id

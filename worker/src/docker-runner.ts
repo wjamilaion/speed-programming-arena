@@ -11,6 +11,7 @@ interface EvaluateParams {
     zipPath: string;
     timeTakenSeconds: number;
     attemptNumber: number;
+    eventStartTime?: string;
 }
 
 interface EvaluationResult {
@@ -59,7 +60,7 @@ export async function evaluateSubmission(params: EvaluateParams): Promise<Evalua
                 const { code } = await runWithTimeout(cmd, TIMEOUT_MS);
                 const isAccepted = code === 0;
 
-                const score = calculateScore(isAccepted ? 1 : 0, 1, params.timeTakenSeconds, params.attemptNumber);
+                const score = calculateScore(isAccepted ? 1 : 0, 1, params.timeTakenSeconds, params.attemptNumber, params.eventStartTime);
                 return {
                     status: isAccepted ? 'accepted' : 'rejected',
                     score,
@@ -105,13 +106,12 @@ export async function evaluateSubmission(params: EvaluateParams): Promise<Evalua
         const { stdout, stderr } = await runWithTimeout(dockerCmd, TIMEOUT_MS);
 
         // 5. Parse output
-        return parseJestOutput(stdout + stderr, params.timeTakenSeconds, params.attemptNumber);
+        return parseJestOutput(stdout + stderr, params.timeTakenSeconds, params.attemptNumber, params.eventStartTime);
 
     } finally {
         await fs.remove(tempDir).catch(err => console.error('Cleanup error', err));
     }
 }
-
 async function runWithTimeout(cmd: string, timeout: number): Promise<{ stdout: string; stderr: string; code: number | null }> {
     return new Promise((resolve, reject) => {
         const child = cp.spawn(cmd, { shell: true });
@@ -142,7 +142,7 @@ async function runWithTimeout(cmd: string, timeout: number): Promise<{ stdout: s
     });
 }
 
-function parseJestOutput(output: string, timeTakenSeconds: number, attemptNumber: number): EvaluationResult {
+function parseJestOutput(output: string, timeTakenSeconds: number, attemptNumber: number, eventStartTime?: string): EvaluationResult {
     let passedCount = 0;
     let totalCount = 0;
     try {
@@ -157,13 +157,23 @@ function parseJestOutput(output: string, timeTakenSeconds: number, attemptNumber
     }
 
     const status = (passedCount === totalCount && totalCount > 0) ? 'accepted' : 'rejected';
-    const score = calculateScore(passedCount, totalCount, timeTakenSeconds, attemptNumber);
+    const score = calculateScore(passedCount, totalCount, timeTakenSeconds, attemptNumber, eventStartTime);
     return { status, score, passedCount, totalCount };
 }
 
-function calculateScore(passed: number, total: number, timeTaken: number, attempts: number): number {
+function calculateScore(passed: number, total: number, timeTaken: number, attempts: number, eventStartTime?: string): number {
     const baseScore = total > 0 ? (passed / total) * 1000 : 0;
-    const timeBonus = Math.max(0, 600 - timeTaken);
+
+    // If eventStartTime is provided, time bonus decays based on absolute time since event start
+    // Otherwise, it decays based on timeTaken (legacy/fallback)
+    let timeReference = timeTaken;
+    if (eventStartTime) {
+        const start = new Date(eventStartTime).getTime();
+        const now = Date.now();
+        timeReference = Math.max(0, Math.floor((now - start) / 1000));
+    }
+
+    const timeBonus = Math.max(0, 3600 - timeReference); // 1 hour pool for absolute timing
     const penalty = (attempts - 1) * 20;
     return Math.max(0, Math.round(baseScore + timeBonus - penalty));
 }
