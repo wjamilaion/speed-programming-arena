@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trophy, Clock, ArrowRight, ArrowLeft, Layout, Medal, Zap, User, ChevronRight } from "lucide-react";
 import { fetchEvent, fetchEventLeaderboard, fetchPersonalStanding } from "@/lib/api";
+import SubmissionsFeed from "@/components/SubmissionsFeed";
 
 export default function EventChallenges({ params }: { params: { id: string } }) {
     const eventId = params.id;
@@ -195,6 +196,10 @@ export default function EventChallenges({ params }: { params: { id: string } }) 
                                 Total Score = Sum of highest score per challenge.<br />
                                 Tie-break = Lowest total time taken for accepted solutions.
                             </p>
+                        </div>
+
+                        <div className="pt-8">
+                            <SubmissionsFeed eventId={eventId} refreshInterval={15000} />
                         </div>
                     </aside>
                 </div>

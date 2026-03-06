@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Trophy, Medal, Crown, Loader2, Users, ArrowLeft, User, Zap } from "lucide-react";
 import { fetchLeaderboard, fetchChallenge, fetchPersonalChallengeStanding } from "@/lib/api";
 import { getSocket } from "@/lib/socket";
+import SubmissionsFeed from "@/components/SubmissionsFeed";
 
 export default function LeaderboardPage() {
     const { challengeId } = useParams<{ challengeId: string }>();
@@ -183,6 +184,10 @@ export default function LeaderboardPage() {
                     </div>
                 </div>
             )}
+
+            <div className="pt-10 border-t border-slate-900">
+                <SubmissionsFeed challengeId={challengeId} title="Recent Activity" />
+            </div>
 
             <div className="text-center">
                 <p className="text-slate-500 text-sm">

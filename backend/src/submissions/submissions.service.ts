@@ -98,4 +98,16 @@ export class SubmissionsService {
             take: 10,
         });
     }
+
+    async findRecent(eventId?: string, challengeId?: string) {
+        return this.submissionRepo.find({
+            where: {
+                ...(eventId ? { event_id: eventId } : {}),
+                ...(challengeId ? { challenge_id: challengeId } : {}),
+            },
+            relations: ['user', 'challenge'],
+            order: { created_at: 'DESC' },
+            take: 20,
+        });
+    }
 }

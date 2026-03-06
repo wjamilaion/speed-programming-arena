@@ -81,4 +81,12 @@ export class SubmissionsController {
     async findAll(@Req() req: any, @Query('challengeId') challengeId?: string) {
         return this.submissionsService.findAllByUser(req.user.id, challengeId);
     }
+
+    @Get('recent')
+    async findRecent(
+        @Query('eventId') eventId?: string,
+        @Query('challengeId') challengeId?: string,
+    ) {
+        return this.submissionsService.findRecent(eventId, challengeId);
+    }
 }

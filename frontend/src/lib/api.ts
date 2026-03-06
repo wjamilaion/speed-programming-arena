@@ -115,3 +115,14 @@ export async function fetchPersonalChallengeStanding(challengeId: string, userId
     if (!res.ok) throw new Error("Failed to fetch personal challenge standing");
     return res.json();
 }
+
+export async function fetchRecentSubmissions(eventId?: string, challengeId?: string) {
+    const params = new URLSearchParams();
+    if (eventId) params.append('eventId', eventId);
+    if (challengeId) params.append('challengeId', challengeId);
+    const res = await fetch(`${API_URL}/submissions/recent?${params.toString()}`, {
+        headers: getHeaders()
+    });
+    if (!res.ok) throw new Error("Failed to fetch recent submissions");
+    return res.json();
+}
