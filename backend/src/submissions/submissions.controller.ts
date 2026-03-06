@@ -11,7 +11,9 @@ import {
     Get,
     Query,
     Param,
+    Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
@@ -94,5 +96,16 @@ export class SubmissionsController {
     @Get('event/:eventId')
     async findAllByEvent(@Param('eventId') eventId: string) {
         return this.submissionsService.findAllByEvent(eventId);
+    }
+
+    @Get('event/:eventId/export')
+    async exportByEvent(
+        @Param('eventId') eventId: string,
+        @Res() res: Response
+    ) {
+        const csv = await this.submissionsService.exportByEvent(eventId);
+        res.set('Content-Type', 'text/csv');
+        res.set('Content-Disposition', `attachment; filename=event-submissions-${eventId}.csv`);
+        res.send(csv);
     }
 }

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { History, ArrowLeft, Loader2, User, Mail, Zap, Terminal, CheckCircle2, XCircle } from "lucide-react";
-import { fetchEvent, fetchEventSubmissions } from "@/lib/api";
+import { History, ArrowLeft, Loader2, User, Mail, Zap, Terminal, CheckCircle2, XCircle, Download } from "lucide-react";
+import { fetchEvent, fetchEventSubmissions, downloadEventSubmissionsCsv } from "@/lib/api";
 
 export default function EventSubmissionsPage() {
     const params = useParams();
@@ -72,6 +72,13 @@ export default function EventSubmissionsPage() {
                             )}
                         </div>
                     </div>
+
+                    <button
+                        onClick={() => downloadEventSubmissionsCsv(eventId)}
+                        className="flex items-center gap-3 px-8 py-4 bg-slate-900 border border-slate-800 rounded-3xl text-[10px] font-black uppercase tracking-widest text-white hover:bg-slate-800 hover:border-slate-700 transition-all shadow-xl active:scale-95 group"
+                    >
+                        <Download className="w-4 h-4 text-blue-500 group-hover:translate-y-0.5 transition-transform" /> Export CSV
+                    </button>
                 </div>
 
                 {/* Submissions Table */}
@@ -126,8 +133,8 @@ export default function EventSubmissionsPage() {
                                         <td className="px-8 py-8">
                                             <div className="flex justify-center">
                                                 <div className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-[0.15em] ${sub.status === 'accepted' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-lg shadow-emerald-500/5' :
-                                                        sub.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                                                            'bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse'
+                                                    sub.status === 'rejected' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                                        'bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse'
                                                     }`}>
                                                     {sub.status === 'accepted' ? <CheckCircle2 className="w-3.5 h-3.5" /> :
                                                         sub.status === 'rejected' ? <XCircle className="w-3.5 h-3.5" /> :

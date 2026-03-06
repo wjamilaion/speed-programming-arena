@@ -133,6 +133,28 @@ export class SubmissionsService {
         });
     }
 
+    async exportByEvent(eventId: string) {
+        const submissions = await this.findAllByEvent(eventId);
+
+        // CSV Header
+        let csv = 'Submission Time,Name,Email,Challenge,Status,Score,Time Taken (s)\n';
+
+        for (const sub of submissions) {
+            const row = [
+                sub.created_at.toISOString(),
+                `"${sub.user?.name || ''}"`,
+                `"${sub.user?.email || ''}"`,
+                `"${sub.challenge?.title || ''}"`,
+                sub.status,
+                sub.score,
+                sub.time_taken_seconds
+            ];
+            csv += row.join(',') + '\n';
+        }
+
+        return csv;
+    }
+
     async recalculateScores() {
         // Fetch all accepted submissions with event_id
         const submissions = await this.submissionRepo.find({

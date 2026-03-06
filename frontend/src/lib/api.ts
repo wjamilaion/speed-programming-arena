@@ -134,3 +134,7 @@ export async function fetchEventSubmissions(eventId: string) {
     if (!res.ok) throw new Error("Failed to fetch event submissions history");
     return res.json();
 }
+
+export async function downloadEventSubmissionsCsv(eventId: string) {
+    window.open(`${API_URL}/submissions/event/${eventId}/export`, '_blank');
+}
