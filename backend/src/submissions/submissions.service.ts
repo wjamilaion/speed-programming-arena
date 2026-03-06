@@ -67,7 +67,7 @@ export class SubmissionsService {
         if (dto.eventId) {
             try {
                 const event = await this.eventsService.findOne(dto.eventId);
-                eventStartTime = event.start_time;
+                eventStartTime = event.start_time?.toISOString();
             } catch (e) {
                 console.error('Failed to fetch event start time', e);
             }
